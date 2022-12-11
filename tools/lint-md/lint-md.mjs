@@ -21283,7 +21283,7 @@ function compare(a, b, property) {
   return String(a[property] || '').localeCompare(b[property] || '')
 }
 
-function hasFlag(flag, argv = process$1.argv) {
+function hasFlag(flag, argv = globalThis.Deno?.args ?? process$1.argv) {
 	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
 	const position = argv.indexOf(prefix + flag);
 	const terminatorPosition = argv.indexOf('--');
@@ -21347,6 +21347,9 @@ function _supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
 			return 2;
 		}
 	}
+	if ('TF_BUILD' in env && 'AGENT_NAME' in env) {
+		return 1;
+	}
 	if (haveStream && !streamIsTTY && forceColor === undefined) {
 		return 0;
 	}
@@ -21365,7 +21368,10 @@ function _supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
 		return 1;
 	}
 	if ('CI' in env) {
-		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE', 'DRONE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+		if ('GITHUB_ACTIONS' in env) {
+			return 3;
+		}
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'BUILDKITE', 'DRONE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
 			return 1;
 		}
 		return min;
@@ -21373,10 +21379,10 @@ function _supportsColor(haveStream, {streamIsTTY, sniffFlags = true} = {}) {
 	if ('TEAMCITY_VERSION' in env) {
 		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
 	}
-	if ('TF_BUILD' in env && 'AGENT_NAME' in env) {
-		return 1;
-	}
 	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+	if (env.TERM === 'xterm-kitty') {
 		return 3;
 	}
 	if ('TERM_PROGRAM' in env) {
